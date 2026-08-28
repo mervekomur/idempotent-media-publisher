@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.api.middleware import verify_idempotency_key
 from app.api.dependencies import get_db
 from app.domain import schemas, models
+from app.services.worker import process_media  # İşçimizi içeri alıyoruz
 
 router = APIRouter()
 
@@ -22,6 +23,8 @@ async def publish_media(
     db.commit()
     db.refresh(new_post)
 
-    # 2. Return immediate 202 Accepted response (Non-blocking)
-    # The actual processing will be dispatched to Celery here later
+    # 2. Dispatch task to Celery Worker (Asenkron tetikleme)
+    process_media.delay(new_post.id)
+
+    # 3. Return immediate 202 Accepted response (Non-blocking)
     return new_post
