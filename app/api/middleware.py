@@ -3,13 +3,13 @@ from app.infrastructure.cache import get_redis
 from app.core.config import settings
 
 async def verify_idempotency_key(
-    x_idempotency_key: str = Header(..., description="Eşsiz işlem anahtarı (UUID)")
+    x_idempotency_key: str = Header(..., description="Unique transaction key (UUID)")
 ):
     redis_client = get_redis()
     
-    # Redis SETNX (Set if Not eXists) komutu ile kilitleme denemesi
-    # nx=True: Sadece daha önce yoksa oluştur
-    # ex=... : Belirlenen süre sonra kilidi otomatik yok et
+    # Attempt to acquire a lock using Redis SETNX (Set if Not eXists)
+    # nx=True: Only set the key if it does not already exist
+    # ex=... : Automatically expire the lock after the specified duration
     is_locked = redis_client.set(
         name=f"idempotency_lock:{x_idempotency_key}", 
         value="processing", 
@@ -18,10 +18,10 @@ async def verify_idempotency_key(
     )
     
     if not is_locked:
-        # Eğer kilit alınamadıysa (yani anahtar zaten Redis'te varsa)
+        # If the lock cannot be acquired, the key already exists in Redis
         raise HTTPException(
             status_code=409, 
-            detail="Conflict: Bu işlem şu anda yürütülüyor veya daha önce tamamlandı."
+            detail="Conflict: This request is currently being processed or has already been completed."
         )
     
     return x_idempotency_key
