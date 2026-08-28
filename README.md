@@ -42,7 +42,7 @@ Make sure you have Docker and Docker Compose installed on your machine.
 1. Installation & Running
 
     Clone the repository:
-    git clone https://github.com/your-username/idempotent-media-publisher.git
+    git clone https://github.com/mervekomur/idempotent-media-publisher.git
     cd idempotent-media-publisher
 2. Run with Docker Compose:
    Build and start all services (PostgreSQL, Redis, FastAPI, and Celery Worker) in detached mode:
