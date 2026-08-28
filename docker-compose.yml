@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # 1. Veritabanı (PostgreSQL)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: publisher_db
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d publisher_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Önbellek (Redis)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # 3. FastAPI Web Sunucusu
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/publisher_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # 4. Celery Arka Plan İşçisi
+  worker:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/publisher_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: celery -A app.services.worker.celery_app worker --loglevel=info
+
+# Veritabanı konteyneri çökse bile verilerin silinmemesi için kalıcı disk alanı
+volumes:
+  postgres_data:
