@@ -70,6 +70,7 @@ Make sure you have Docker and Docker Compose installed on your machine.
    5. Execute the request to receive a 202 Accepted response while the worker processes the task asynchronously in the background. Subsequent requests with the same idempotency key will trigger conflict protection.
 
 📂 Project Structure
+```text
 idempotent-media-publisher/
 ├── app/
 │   ├── api/          # Routers, dependencies, and middleware
