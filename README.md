@@ -1,7 +1,8 @@
-Idempotent & Fault-Tolerant Media Publisher API
+#Idempotent & Fault-Tolerant Media Publisher API
 
 A production-ready, highly scalable media publishing microservice built with Python, FastAPI, PostgreSQL, Redis, and Celery. This architecture ensures exact-once processing via idempotency locks, asynchronous background task execution, and robust error handling under high concurrency.
-🏗️ Architecture & Core Mechanisms
+
+##🏗️ Architecture & Core Mechanisms
 
 The project is structured following Clean Architecture principles, separating concerns into distinct, testable layers:
 
@@ -13,7 +14,7 @@ The project is structured following Clean Architecture principles, separating co
 
     services: Celery background workers (worker.py) handling non-blocking heavy lifting (e.g., external API integrations, media processing).
 
-Key Features
+##Key Features
 
     Distributed Idempotency: Uses Redis SETNX mechanism and custom headers (x-idempotency-key) to prevent duplicate processing of identical requests, returning a 409 Conflict on concurrent retries.
 
@@ -23,7 +24,7 @@ Key Features
 
     Containerized Orchestration: Fully orchestrated via Docker and Docker Compose, managing API, worker, database, and cache containers in a single network.
 
-🛠️ Tech Stack
+##🛠️ Tech Stack
 
     Backend: Python 3.11, FastAPI, Uvicorn
 
@@ -51,7 +52,7 @@ Make sure you have Docker and Docker Compose installed on your machine.
    Open your browser and navigate to the interactive Swagger UI:
    http://localhost:8000/docs
    
-🧪 Testing the API
+##🧪 Testing the API
 
    1. Go to /api/v1/publish via the Swagger UI (/docs).
 
@@ -68,7 +69,7 @@ Make sure you have Docker and Docker Compose installed on your machine.
 }
    5. Execute the request to receive a 202 Accepted response while the worker processes the task asynchronously in the background. Subsequent requests with the same idempotency key will trigger conflict protection.
 
-📂 Project Structure
+##📂 Project Structure
 ```text
 idempotent-media-publisher/
 ├── app/
