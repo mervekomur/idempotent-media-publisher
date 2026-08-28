@@ -1,4 +1,4 @@
-Idempotent & Fault-Tolerant Media Publisher API
+iIdempotent & Fault-Tolerant Media Publisher API
 
 A production-ready, highly scalable media publishing microservice built with Python, FastAPI, PostgreSQL, Redis, and Celery. This architecture ensures exact-once processing via idempotency locks, asynchronous background task execution, and robust error handling under high concurrency.
 🏗️ Architecture & Core Mechanisms
