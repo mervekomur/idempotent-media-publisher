@@ -1,4 +1,4 @@
-iIdempotent & Fault-Tolerant Media Publisher API
+Idempotent & Fault-Tolerant Media Publisher API
 
 A production-ready, highly scalable media publishing microservice built with Python, FastAPI, PostgreSQL, Redis, and Celery. This architecture ensures exact-once processing via idempotency locks, asynchronous background task execution, and robust error handling under high concurrency.
 🏗️ Architecture & Core Mechanisms
@@ -36,23 +36,21 @@ Key Features
     Deployment: Docker, Docker Compose
 
 🚀 Getting Started
-Prerequisites
+## Getting Started
 
+### Prerequisites
 Make sure you have Docker and Docker Compose installed on your machine.
-1. Installation & Running
 
-    Clone the repository:
-   1. Clone the repository:
-   git clone [idempotent-media-publisher repository](https://github.com/mervekomur/idempotent-media-publisher.git)
-   cd idempotent-media-publisher
-2. Run with Docker Compose:
+### Installation & Running
+
+1. Run with Docker Compose:
    Build and start all services (PostgreSQL, Redis, FastAPI, and Celery Worker) in detached mode:
    docker-compose up --build -d
-3. Access the API Documentation:
+
+2. Access the API Documentation:
    Open your browser and navigate to the interactive Swagger UI:
-
-    http://localhost:8000/docs
-
+   http://localhost:8000/docs
+   
 🧪 Testing the API
 
    1. Go to /api/v1/publish via the Swagger UI (/docs).
