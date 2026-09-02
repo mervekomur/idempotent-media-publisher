@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.api.middleware import verify_idempotency_key
 from app.api.dependencies import get_db
 from app.domain import schemas, models
 from app.services.worker import process_media
@@ -10,10 +9,11 @@ router = APIRouter()
 
 @router.post("/publish", response_model=schemas.PostResponse, status_code=status.HTTP_202_ACCEPTED)
 async def publish_media(
+    request: Request,
     post_data: schemas.PostCreate,
-    idempotency_key: str = Depends(verify_idempotency_key),
     db: Session = Depends(get_db)
 ):
+    idempotency_key = request.state.idempotency_key
     try:
         new_post = models.MediaPost(
             id=idempotency_key,
