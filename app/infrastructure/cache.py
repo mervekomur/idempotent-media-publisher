@@ -1,4 +1,4 @@
-import redis
+import redis.asyncio as redis
 from app.core.config import settings
 
 # Isolate the Redis connection from the rest of the application (Singleton Pattern)

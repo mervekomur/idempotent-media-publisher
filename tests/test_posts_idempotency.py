@@ -12,6 +12,7 @@ from sqlalchemy.pool import StaticPool
 from app.api.dependencies import get_db
 from app.api.routes import router
 from app.domain.models import Base, MediaPost
+from app.middleware import IdempotencyMiddleware
 
 
 @pytest.fixture
@@ -24,7 +25,7 @@ def test_app(monkeypatch):
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     Base.metadata.create_all(bind=engine)
 
-    fake_redis = fakeredis.FakeStrictRedis(decode_responses=True)
+    fake_redis = fakeredis.aioredis.FakeRedis(decode_responses=True)
 
     def override_get_db():
         db = TestingSessionLocal()
@@ -34,13 +35,14 @@ def test_app(monkeypatch):
             db.close()
 
     app = FastAPI()
+    app.add_middleware(IdempotencyMiddleware)
     app.include_router(router, prefix="/api/v1")
     app.dependency_overrides[get_db] = override_get_db
 
-    from app.api import middleware
+    from app.middleware import idempotency
     from app.api import routes
 
-    monkeypatch.setattr(middleware, "get_redis", lambda: fake_redis)
+    monkeypatch.setattr(idempotency, "get_redis", lambda: fake_redis)
     monkeypatch.setattr(routes.process_media, "delay", lambda _post_id: None)
 
     return app, fake_redis, TestingSessionLocal
@@ -69,7 +71,9 @@ async def test_publish_accepts_new_idempotency_key(async_client, test_app):
     assert payload["id"] == key
     assert payload["media_url"] == "https://example.com/1.jpg"
     assert payload["status"] == "PENDING"
-    assert fake_redis.get(f"idempotency_lock:{key}") == "processing"
+    redis_payload = await fake_redis.hgetall(f"idempotency:result:{key}")
+    assert redis_payload["status"] == "completed"
+    assert "payload_hash" in redis_payload
 
 
 @pytest.mark.asyncio
@@ -81,8 +85,8 @@ async def test_duplicate_request_with_same_key_returns_conflict(async_client):
     second = await async_client.post("/api/v1/publish", headers={"x-idempotency-key": key}, json=body)
 
     assert first.status_code == 202
-    assert second.status_code == 409
-    assert "currently being processed" in second.json()["detail"]
+    assert second.status_code == 202
+    assert second.json() == first.json()
 
 
 @pytest.mark.asyncio
@@ -94,7 +98,7 @@ async def test_duplicate_request_after_lock_loss_returns_existing_row(async_clie
     first = await async_client.post("/api/v1/publish", headers={"x-idempotency-key": key}, json=body)
     assert first.status_code == 202
 
-    fake_redis.delete(f"idempotency_lock:{key}")
+    await fake_redis.delete(f"idempotency:lock:{key}")
 
     second = await async_client.post("/api/v1/publish", headers={"x-idempotency-key": key}, json=body)
     assert second.status_code == 202
@@ -118,17 +122,45 @@ async def test_concurrent_requests_only_allow_one_inflight(async_client):
     responses = await asyncio.gather(*[send_request() for _ in range(6)])
     status_codes = [response.status_code for response in responses]
 
-    assert status_codes.count(202) == 1
-    assert status_codes.count(409) == 5
+    assert status_codes.count(202) == 6
+    assert status_codes.count(409) == 0
 
 
 @pytest.mark.asyncio
-async def test_missing_idempotency_header_returns_validation_error(async_client):
+async def test_missing_idempotency_header_passes_through(async_client):
     response = await async_client.post(
         "/api/v1/publish",
         json={"media_url": "https://example.com/no-header.jpg", "caption": "none"},
     )
 
-    assert response.status_code == 422
-    details = response.json()["detail"]
-    assert any(item["loc"][-1] == "x-idempotency-key" for item in details)
+    assert response.status_code == 202
+    payload = response.json()
+    assert payload["media_url"] == "https://example.com/no-header.jpg"
+    assert payload["id"]
+
+
+@pytest.mark.asyncio
+async def test_same_key_with_different_payload_hash_returns_conflict(async_client):
+    key = "hash-mismatch-key"
+    first = await async_client.post(
+        "/api/v1/publish",
+        headers={"x-idempotency-key": key},
+        json={
+            "media_url": "https://example.com/hash-1.jpg",
+            "caption": "same caption",
+            "image": "raw-image-a",
+        },
+    )
+    second = await async_client.post(
+        "/api/v1/publish",
+        headers={"x-idempotency-key": key},
+        json={
+            "media_url": "https://example.com/hash-2.jpg",
+            "caption": "same caption",
+            "image": "raw-image-b",
+        },
+    )
+
+    assert first.status_code == 202
+    assert second.status_code == 409
+    assert "different payload" in second.json()["detail"]

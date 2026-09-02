@@ -10,13 +10,14 @@ The project is structured following Clean Architecture principles, separating co
 
     infrastructure: Database connection management (database.py) and Redis distributed caching/locking (cache.py).
 
-    api: FastAPI routers, dependency injection (dependencies.py), and idempotency middleware (middleware.py).
+    api: FastAPI routers and dependency injection (dependencies.py).
+    middleware: Enterprise-grade idempotency middleware with payload fingerprinting and wait-and-return behavior.
 
     services: Celery background workers (worker.py) handling non-blocking heavy lifting (e.g., external API integrations, media processing).
 
 ## Key Features
 
-    Distributed Idempotency: Uses Redis SETNX mechanism and custom headers (x-idempotency-key) to prevent duplicate processing of identical requests, returning a 409 Conflict on concurrent retries.
+    Distributed Idempotency: Uses Redis `SET ... NX PX` locks and custom headers (`x-idempotency-key`) to ensure wait-and-return behavior for duplicate retries and conflict protection on payload mismatch.
 
     Asynchronous Processing: Offloads heavy publishing workflows to Celery workers backed by Redis, responding instantly to clients with a 202 Accepted status.
 
