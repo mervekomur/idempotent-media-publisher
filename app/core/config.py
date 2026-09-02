@@ -13,7 +13,10 @@ class Settings(BaseSettings):
     
     # Idempotency Settings
     IDEMPOTENCY_KEY_HEADER: str = "X-Idempotency-Key"
-    LOCK_TIMEOUT_SECONDS: int = 60  # How long to block duplicate requests
+    IDEMPOTENCY_LOCK_TIMEOUT_SECONDS: int = 60
+    IDEMPOTENCY_RESPONSE_TTL_SECONDS: int = 300
+    IDEMPOTENCY_WAIT_TIMEOUT_SECONDS: int = 30
+    IDEMPOTENCY_WAIT_POLL_SECONDS: float = 0.05
 
     class Config:
         case_sensitive = True

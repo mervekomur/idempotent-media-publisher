@@ -14,7 +14,7 @@ async def verify_idempotency_key(
         name=f"idempotency_lock:{x_idempotency_key}", 
         value="processing", 
         nx=True, 
-        ex=settings.LOCK_TIMEOUT_SECONDS
+        ex=settings.IDEMPOTENCY_LOCK_TIMEOUT_SECONDS
     )
     
     if not is_locked:

@@ -6,10 +6,9 @@ import enum
 Base = declarative_base()
 
 class PostStatus(str, enum.Enum):
-    PENDING = "PENDING"
-    PROCESSING = "PROCESSING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
+    DRAFT = "DRAFT"
+    MEDIA_UPLOADED = "MEDIA_UPLOADED"
+    PUBLISHED = "PUBLISHED"
 
 class MediaPost(Base):
     __tablename__ = "media_posts"
@@ -18,9 +17,9 @@ class MediaPost(Base):
     id = Column(String, primary_key=True, index=True)
     
     caption = Column(String, nullable=True)
-    media_url = Column(String, nullable=False)
+    media_url = Column(String, nullable=True)
     
-    status = Column(Enum(PostStatus), default=PostStatus.PENDING, nullable=False)
+    status = Column(Enum(PostStatus), default=PostStatus.DRAFT, nullable=False)
     
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

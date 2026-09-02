@@ -21,24 +21,17 @@ def process_media(post_id: str):
         if not post:
             return {"status": "error", "message": "Post not found"}
 
-        # 2. Update status to PROCESSING
-        post.status = PostStatus.PROCESSING
-        db.commit()
-
-        # 3. Simulate heavy lifting (e.g., uploading to a social media API)
+        # 2. Simulate heavy lifting (e.g., uploading to a social media API)
         time.sleep(5)  # Simulating a 5-second network request
 
-        # 4. Update status to COMPLETED
-        post.status = PostStatus.COMPLETED
+        # 3. Update status to PUBLISHED
+        post.status = PostStatus.PUBLISHED
         db.commit()
 
         return {"status": "success", "post_id": post_id}
     
     except Exception as e:
         db.rollback()
-        if post:
-            post.status = PostStatus.FAILED
-            db.commit()
         return {"status": "error", "message": str(e)}
     finally:
         db.close()
