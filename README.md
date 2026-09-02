@@ -16,7 +16,7 @@ The project is structured following Clean Architecture principles, separating co
 
 ## Key Features
 
-    Distributed Idempotency: Uses Redis SETNX mechanism and custom headers (x-idempotency-key) to prevent duplicate processing of identical requests, returning a 409 Conflict on concurrent retries.
+    Distributed Idempotency: Uses Redis lock records plus cached response replay for x-idempotency-key requests, so concurrent retries wait and receive the original response body.
 
     Asynchronous Processing: Offloads heavy publishing workflows to Celery workers backed by Redis, responding instantly to clients with a 202 Accepted status.
 
@@ -67,7 +67,7 @@ Make sure you have Docker and Docker Compose installed on your machine.
   "media_url": "https://example.com/media/photo.jpg",
   "caption": "Production-ready automated post."
 }
-   5. Execute the request to receive a 202 Accepted response while the worker processes the task asynchronously in the background. Subsequent requests with the same idempotency key will trigger conflict protection.
+   5. Execute the request to receive a 202 Accepted response while the worker processes the task asynchronously in the background. Subsequent requests with the same idempotency key return the exact cached response after the first request completes.
 
 ## 📂 Project Structure
 ```text
